@@ -1,0 +1,31 @@
+[auth]
+username=<un>
+password=<pwd>
+
+[sys]
+logfilepath=../log
+
+[stream]
+# Twitter Powertrack stream (Gnip 2.5)
+streamurl=https://stream.gnip.com:443/accounts/shendrickson/publishers/twitter/streams/track/pt1.json
+streamname=Powertrack
+filepath=../data
+
+[proc]
+rollduration=60
+
+#
+# NOTE: tested with only one of these at a time
+#
+
+# sample stream for latency measurements
+#processtype=latency
+
+# print out rule production rates
+processtype=rules
+
+# store stream contents in files by year, month, day, hour, min
+#processtype=files
+
+# store stream contents in redis
+#processtype=redis
