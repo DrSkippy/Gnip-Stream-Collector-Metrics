@@ -19,12 +19,12 @@ summary(dat)
 
 
 p0 <-qplot(dat$cat, dat$latency, data=dat, geom="boxplot"
-	, main="StockTwits Latency"
+	, main="Latency"
 	, xlab=""
 	, ylab="Latency (Sec)")
 
 p1 <-qplot(as.factor(dat$dates$hour), dat$latency, data=dat, geom="boxplot"
-	, main="StockTwits Latency"
+	, main="Latency"
 	, xlab="hour"
 	, ylab="Latency (Sec)")
 
