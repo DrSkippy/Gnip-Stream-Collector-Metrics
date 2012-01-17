@@ -12,11 +12,13 @@ Command line tool for:
 Requires Python, pycurl, curllib and, for token frequency, Redis and the python
 redis module.
 
-The tool is driven from a config file named gnip.cfg To get started, 
+The tool is driven from a config file named gnip.cfg. To get started, 
 enter your Gnip login credentials and stream URL and choose the tool 
 function you desire.
 
-Some examples to show how it works. All examples run with Powertrack rule set:
+Usage:
+
+All examples run with Gnip Powertrack rule set:
 
 tebow
 broncos
@@ -69,7 +71,7 @@ broncos: ...... (   5 tweets matched)   0.2499 tweets/second
 ...
 
 
-The parameter "rollduration" sets the sample size.  You may need to adjust this based
+The parameter "rollduration" sets the time between reports.  You may need to adjust this based
 on the productivity of your rule set. 
 
 
@@ -207,6 +209,8 @@ Scott-Hendricksons-MacBook-Pro ~/IdeaProjects/RuleProduction/src> ./GnipStreamCo
 In the sample shown, the average latency is around 12 s.  Gnip documentations estimates
 that the stream enhancement adds about 10s of latency on average.  The 
 GnipStreamCollectorMetrics.py adds approximately 1.5s on average.
+
+An R utility is provided to create boxplots of latencies. (See ./R/plotLatency.r)
 
 Example 4: Files
 -----------------

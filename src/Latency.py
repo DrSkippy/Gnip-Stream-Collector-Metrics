@@ -32,6 +32,7 @@ class Latency(SaveThread):
 		actJson = json.loads(act.strip())
 		# should work for both Gnip Wordpress and Gnip Twitter normalized streams 
 		if "postedTime" in actJson:
+			# for twitter
 			pt = actJson["postedTime"]
 			now = datetime.datetime.now() + tzOffset
 			lat = now - datetime.datetime.strptime(pt, "%Y-%m-%dT%H:%M:%S.000Z")
@@ -39,6 +40,7 @@ class Latency(SaveThread):
 			latSec = (lat.microseconds + (lat.seconds + lat.days * 86400.) * 10.**6) / 10.**6
 			sys.stdout.write("%s, %f\n"%(now,latSec))
 		elif "created_at"in actJson:
+			# for wp
 			pt = actJson["created_at"]
 			now = datetime.datetime.now() + tzOffset
 			# example date: Thu Dec 15 20:56:00 +0000 2011
@@ -46,6 +48,17 @@ class Latency(SaveThread):
 			self.logger.debug("%s"%(lat))
 		        latSec = (lat.microseconds + (lat.seconds + lat.days * 86400.) * 10.**6) / 10.**6
 			sys.stdout.write("%s, %f\n"%(now,latSec))
+		elif "object" in actJson:
+			# for stocktwits
+			if "postedTime" in actJson["object"]:
+				pt = actJson["object"]["postedTime"]
+                        	now = datetime.datetime.now() + tzOffset
+                        	lat = now - datetime.datetime.strptime(pt, "%Y-%m-%dT%H:%M:%SZ")
+                        	self.logger.debug("%s"%(lat))
+                        	latSec = (lat.microseconds + (lat.seconds + lat.days * 86400.) * 10.**6) / 10.**6
+                        	sys.stdout.write("%s, %f\n"%(now,latSec))
+			else:
+				self.logger.debug("%s"%"object found but postedTime missing")
 		else:
-			self.logger.debug("postedTime missing")
+			self.logger.debug("postedTime, created_at, and object missing")
         sys.exit(0)

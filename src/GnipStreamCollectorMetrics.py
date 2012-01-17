@@ -195,7 +195,7 @@ if __name__ == '__main__':
                     format='%(asctime)s %(levelname)s %(funcName)s %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p',
     		    level=logging.ERROR)
-                    #level = logging.DEBUG)
+                    # level = logging.DEBUG)
     
     # set up authentication
     username = config.get('auth','username')
