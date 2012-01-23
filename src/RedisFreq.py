@@ -9,6 +9,7 @@ __author__ = 'scott hendrickson'
 import sys
 import redis
 import re
+import datetime
 
 limit = 100
 #####################
@@ -28,7 +29,7 @@ class RedisFreq(object):
         self.ordKeys.reverse()
 
     def __repr__(self):
-	    res = ''
+	    res = '%s\n'%datetime.datetime.now()
 	    cnt = 0
 	    for key in self.ordKeys:
 		    cnt += 1
