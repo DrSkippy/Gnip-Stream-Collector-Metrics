@@ -7,9 +7,7 @@ Command line tool for:
  * See real-time token frequency (uses redis store)
  * Measure social media latency (time from creation time stamp to delivery)
 
-(For tweet payloads, see https://github.com/vkris/gnip-python)
-
-Requires Python, pycurl, curllib and, for token frequency, Redis and the python
+Requires Python urllib2 and, for token frequency, Redis and the python
 redis module.
 
 The tool is driven from a config file named gnip.cfg. To get started, 
@@ -26,8 +24,6 @@ football
 win
 gnip
 beer -root
-
-
 
 Example 1: Rule production rates
 --------------------------------
@@ -250,6 +246,3 @@ New directories will be created for every hour.  Here the rollduration is set to
 
 Enjoy!
 
-** Following examples from https://github.com/vkris/gnip-python -- check out that code to get tweet contents.
-
-Software is licensed under GPL.  2012.
