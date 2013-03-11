@@ -47,11 +47,10 @@ class SaveThread(threading.Thread):
                 name += "_%02d%02d"%(self.timeStart.tm_hour, self.timeStart.tm_min)
                 name += ".gz"
                 file_name = file_path + "/" + name
-                with write_lock:
-                    fp = gzip.open(file_name, "a")
-                    fp.write(self.string_buffer)
-                    fp.close()
-                    self.logger.info("saved file %s"%file_name)
+                fp = gzip.open(file_name, "a")
+                fp.write(self.string_buffer)
+                fp.close()
+                self.logger.info("saved file %s"%file_name)
         except Exception, e:
             self.logger.error("saveAs failed, exiting thread (%s). Exiting."%e)
             raise e

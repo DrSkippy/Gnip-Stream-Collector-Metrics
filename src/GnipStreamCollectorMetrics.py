@@ -31,7 +31,7 @@ class GnipStreamClient(object):
         self.streamName = _streamName
         self.streamURL = _streamURL
         self.filePath = _filePath
-        self.procThreadObj = _procThread
+        self.procThread = _procThread
         #
         self.headers = { 'Accept': 'application/json',
             'Connection': 'Keep-Alive',
@@ -40,14 +40,27 @@ class GnipStreamClient(object):
                 '%s:%s'%(_userName, _password))  }
     
     def run(self):
-        self.time_start = time.time()
-        self.time_roll_start = self.time_start
+        self.time_roll_start = time.time()
+        #delay = 0.01
+        #fail_time = 0.0
         while True:
+            reset_time = time.time()
             try:
                 self.getStream()
                 logr.error("Forced disconnect: %s"%e)
             except ssl.SSLError, e:
                 logr.error("Connection failed: %s"%e)
+            #finally:
+            #    time.sleep(delay)
+            #    fail_time = time.time()
+            #    if fail_time - reset_time > 1.1*delay:
+            #        reset_time = time.time()
+            #        delay = 0.01
+            #    else:
+            #        if delay < 120:
+            #            delay *= 2
+            #        else:
+            #            delay = 120
 
     def getStream(self):
         req = urllib2.Request(self.streamURL, headers=self.headers)
@@ -62,17 +75,17 @@ class GnipStreamClient(object):
                 return
             self.string_buffer += chunk
             test_time = time.time()
-            test_size = roll_size + len(self.string_buffer)
-            if self.triggerProcess(test_time, test_size):
+            test_roll_size = roll_size + len(self.string_buffer)
+            if self.triggerProcess(test_time, test_roll_size):
                 try:
                     [records, self.string_buffer] = self.string_buffer.rsplit(NEW_LINE,1)
                     timeSpan = test_time - self.time_roll_start
                     logr.debug("recsize=%d, %s, %s, ts=%d, dur=%d"%
                             (len(records), self.streamName, self.filePath, 
                                 test_time, timeSpan))
-                    self.procThreadObj(records, self.streamName, self.filePath,
+                    self.procThread(records, self.streamName, self.filePath,
                             logr, self.time_roll_start, timeSpan).start()
-                    if self.rollForward(test_time, test_size):
+                    if self.rollForward(test_time, test_roll_size):
                         self.time_roll_start = test_time
                         roll_size = 0
                     else:
@@ -106,23 +119,25 @@ class GnipStreamClient(object):
 if __name__ == '__main__':
     config = ConfigParser.ConfigParser()
     config.read('gnip.cfg')
+    streamname = config.get('stream', 'streamname')
     # logger 
     logfilepath = config.get('sys','logfilepath')
     logr = logging.getLogger('GnipStreamLogger')
     rotating_handler = logging.handlers.RotatingFileHandler(
-            filename=logfilepath + "/gnip-stream-log",
+            filename=logfilepath + "/%s-log"%streamname,
             mode='a', maxBytes=2**24, backupCount=5)
     rotating_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(funcName)s %(message)s"))
     logr.setLevel(logging.DEBUG)
+    #logr.setLevel(logging.ERROR)
     logr.addHandler(rotating_handler)
     # set up authentication
     username = config.get('auth','username')
     password = config.get('auth','password')
     # stream
     streamurl = config.get('stream', 'streamurl')
-    streamname = config.get('stream', 'streamname')
     filepath = config.get('stream', 'filepath')
     logr.info("Collection starting for stream %s"%(streamurl))
+    logr.info("Storing data in path %s"%(filepath))
     # Determine processing method
     rollduration = int(config.get('proc', 'rollduration'))
     processtype = config.get('proc', 'processtype')
@@ -139,7 +154,6 @@ if __name__ == '__main__':
     else:
         logr.error("No valid processing strategy selected (%s), aborting"%processtype)
         sys.exit(-1)
-    logr.info("Storing data in path %s"%(filepath))
     client = GnipStreamClient(streamurl, streamname, username, password, 
             filepath, rollduration, proc)
     client.run()
