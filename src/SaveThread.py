@@ -12,16 +12,16 @@ import sys
 write_lock = RLock()
 
 class SaveThread(threading.Thread):
-    def __init__(self, _buffer, _feedname, _savepath, _rootLogger, _endTs, _spanTs):
+    def __init__(self, _buffer, _feedname, _savepath, _rootLogger, _startTs, _spanTs):
         threading.Thread.__init__(self)
         with write_lock:
             self.logger =  _rootLogger
             self.savepath = _savepath
             self.string_buffer = _buffer
             self.feedName = _feedname
-            self.timeEnd = time.gmtime(_endTs)
+            self.timeEnd = time.gmtime(_startTs + _spanTs)
             self.timeSpan = _spanTs
-            self.timeStart = time.gmtime(_endTs -_spanTs)
+            self.timeStart = time.gmtime(_startTs)
 
     def run(self):
         try:

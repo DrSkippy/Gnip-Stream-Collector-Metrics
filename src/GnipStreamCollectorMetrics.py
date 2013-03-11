@@ -20,7 +20,7 @@ from Latency import Latency
 CHUNK_SIZE = 2**16        # decrease for v. low volume streams, > max record size
 GNIP_KEEP_ALIVE = 30      # 30 sec gnip timeout
 MAX_BUF_SIZE = 2**22      # bytes records to hold in memory
-MAX_ROLL_SIZE = 2**34     # force time-period to roll forward 
+MAX_ROLL_SIZE = 2**36     # force time-period to roll forward 
 NEW_LINE = '\r\n'
 
 class GnipStreamClient(object):
@@ -71,7 +71,7 @@ class GnipStreamClient(object):
                             (len(records), self.streamName, self.filePath, 
                                 test_time, timeSpan))
                     self.procThreadObj(records, self.streamName, self.filePath,
-                            logging, test_time, timeSpan).start()
+                            logging, self.time_roll_start, timeSpan).start()
                     if self.rollForward(test_time, test_size):
                         self.time_roll_start = test_time
                         roll_size = 0
