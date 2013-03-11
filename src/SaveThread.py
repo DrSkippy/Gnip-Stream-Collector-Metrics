@@ -26,7 +26,7 @@ class SaveThread(threading.Thread):
     def run(self):
         try:
             with write_lock:
-                # store by start date, name by end date
+                # store by start date, name by start date
                 self.logger.debug("started")
                 file_path = "/".join([
                     self.savepath,
@@ -41,10 +41,10 @@ class SaveThread(threading.Thread):
                     self.logger.info("directory exists (%s)"%file_path)
                 name = self.feedName + "_"
                 name += "-".join([
-                        "%d"%self.timeEnd.tm_year,
-                        "%02d"%self.timeEnd.tm_mon,
-                        "%02d"%self.timeEnd.tm_mday])
-                name += "_%02d%02d"%(self.timeEnd.tm_hour, self.timeEnd.tm_min)
+                        "%d"%self.timeStart.tm_year,
+                        "%02d"%self.timeStart.tm_mon,
+                        "%02d"%self.timeStart.tm_mday])
+                name += "_%02d%02d"%(self.timeStart.tm_hour, self.timeStart.tm_min)
                 name += ".gz"
                 file_name = file_path + "/" + name
                 with write_lock:
