@@ -47,7 +47,7 @@ class GnipStreamClient(object):
             reset_time = time.time()
             try:
                 self.getStream()
-                logr.error("Forced disconnect: %s"%e)
+                logr.error("Forced disconnect")
             except ssl.SSLError, e:
                 logr.error("Connection failed: %s"%e)
             #finally:
@@ -63,6 +63,7 @@ class GnipStreamClient(object):
             #            delay = 120
 
     def getStream(self):
+        logr.info("Connecting")
         req = urllib2.Request(self.streamURL, headers=self.headers)
         response = urllib2.urlopen(req, timeout=(1+GNIP_KEEP_ALIVE))
         decompressor = zlib.decompressobj(16+zlib.MAX_WBITS)
