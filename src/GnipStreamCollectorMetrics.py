@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 __author__ = 'scott hendrickson'
-import threading
+
 import ConfigParser
+import os
 import time
 import logging
 import logging.handlers
@@ -13,7 +14,7 @@ import ssl
 
 # stream processing strategies
 from SaveThread import SaveThread
-from CountRules import CountRules
+from CountTwitterRules import CountTwitterRules
 from Redis import Redis
 from Latency import Latency
 
@@ -21,6 +22,8 @@ CHUNK_SIZE = 2**16        # decrease for v. low volume streams, > max record siz
 GNIP_KEEP_ALIVE = 30      # 30 sec gnip timeout
 MAX_BUF_SIZE = 2**22      # bytes records to hold in memory
 MAX_ROLL_SIZE = 2**30     # force time-period to roll forward 
+DELAY_FACTOR = 1.5        # grow by DELAY_FACTOR - 1 % with each failed connection
+DELAY_MAX = 150           # maximum delay in seconds
 NEW_LINE = '\r\n'
 
 class GnipStreamClient(object):
@@ -32,7 +35,6 @@ class GnipStreamClient(object):
         self.streamURL = _streamURL
         self.filePath = _filePath
         self.procThread = _procThread
-        #
         self.headers = { 'Accept': 'application/json',
             'Connection': 'Keep-Alive',
             'Accept-Encoding' : 'gzip',
@@ -41,26 +43,16 @@ class GnipStreamClient(object):
     
     def run(self):
         self.time_roll_start = time.time()
-        #delay = 0.01
-        #fail_time = 0.0
+        delay = 0.01
         while True:
-            reset_time = time.time()
             try:
                 self.getStream()
                 logr.error("Forced disconnect")
+                delay = 0.01
             except ssl.SSLError, e:
                 logr.error("Connection failed: %s"%e)
-            #finally:
-            #    time.sleep(delay)
-            #    fail_time = time.time()
-            #    if fail_time - reset_time > 1.1*delay:
-            #        reset_time = time.time()
-            #        delay = 0.01
-            #    else:
-            #        if delay < 120:
-            #            delay *= 2
-            #        else:
-            #            delay = 120
+                delay = delay*DELAY_FACTOR if delay < DELAY_MAX else DELAY_MAX
+            time.sleep(delay)
 
     def getStream(self):
         logr.info("Connecting")
@@ -118,8 +110,15 @@ class GnipStreamClient(object):
         return self.rollForward(ttime, tsize)
 
 if __name__ == '__main__':
+    config_file_name = "./gnip.cfg"
+    if not os.path.exists(config_file_name):
+        if 'GNIP_CONFIG_FILE' in os.environ:
+            config_file_name = os.environ['GNIP_CONFIG_FILE']
+        else:
+            print "No configuration file found."
+            sys.exit()
     config = ConfigParser.ConfigParser()
-    config.read('gnip.cfg')
+    config.read(config_file_name)
     streamname = config.get('stream', 'streamname')
     # logger 
     logfilepath = config.get('sys','logfilepath')
@@ -132,8 +131,15 @@ if __name__ == '__main__':
     #logr.setLevel(logging.ERROR)
     logr.addHandler(rotating_handler)
     # set up authentication
-    username = config.get('auth','username')
-    password = config.get('auth','password')
+    if config.has_section('auth'):
+        username = config.get('auth','username')
+        password = config.get('auth','password')
+    elif config.has_section('creds'):
+        username = config.get('creds','username')
+        password = config.get('creds','password')
+    else:
+        logr.error("No credentials found")
+        sys.exit()
     # stream
     streamurl = config.get('stream', 'streamurl')
     filepath = config.get('stream', 'filepath')
@@ -149,12 +155,13 @@ if __name__ == '__main__':
     elif processtype == "files":
         proc = SaveThread
     elif processtype == "rules":
-        proc = CountRules
+        proc = CountTwitterRules
     elif processtype == "redis":
         proc = Redis
     else:
         logr.error("No valid processing strategy selected (%s), aborting"%processtype)
         sys.exit(-1)
+    # ok, do it
     client = GnipStreamClient(streamurl, streamname, username, password, 
             filepath, rollduration, proc)
     client.run()
