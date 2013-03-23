@@ -7,10 +7,11 @@ import time
 import logging
 import logging.handlers
 import urllib2
+import httplib
+import ssl
 import base64
 import zlib
 import sys
-import ssl
 
 # stream processing strategies
 from SaveThread import SaveThread
@@ -52,6 +53,9 @@ class GnipStreamClient(object):
             except ssl.SSLError, e:
                 logr.error("Connection failed: %s"%e)
                 delay = delay*DELAY_FACTOR if delay < DELAY_MAX else DELAY_MAX
+            except httplib.IncompleteRead, e:
+                logr.error("Streaming chunked-read error (data chunk lost): %s"%e)
+                # no delay increase here, just reconnedt
             time.sleep(delay)
 
     def getStream(self):
