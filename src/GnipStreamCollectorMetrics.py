@@ -56,6 +56,9 @@ class GnipStreamClient(object):
             except httplib.IncompleteRead, e:
                 logr.error("Streaming chunked-read error (data chunk lost): %s"%e)
                 # no delay increase here, just reconnedt
+            except urllib2.HTTPError, e:
+                logr.error("HTTP error: %s"%e)
+                # no delay increase here, just reconnedt
             time.sleep(delay)
 
     def getStream(self):
