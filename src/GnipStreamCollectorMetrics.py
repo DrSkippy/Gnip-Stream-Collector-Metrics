@@ -29,8 +29,10 @@ NEW_LINE = '\r\n'
 
 class GnipStreamClient(object):
     def __init__(self, _streamURL, _streamName, _userName, _password,
-            _filePath, _rollDuration, _procThread):
+            _filePath, _rollDuration, _procThread, compressed=True):
         logr.info('GnipStreamClient started')
+        self.compressed = compressed
+        logr.info('Stream compressed: %s'%str(self.compressed))
         self.rollDuration = _rollDuration
         self.streamName = _streamName
         self.streamURL = _streamURL
@@ -69,7 +71,10 @@ class GnipStreamClient(object):
         self.string_buffer = ''
         roll_size = 0
         while True:
-            chunk = decompressor.decompress(response.read(CHUNK_SIZE))
+            if self.compressed:
+                chunk = decompressor.decompress(response.read(CHUNK_SIZE))
+            else:
+                chunk = response.read(CHUNK_SIZE)
             # if chunk is zero length, no longer connected to gnip
             if chunk == '':
                 return
@@ -150,6 +155,10 @@ if __name__ == '__main__':
     # stream
     streamurl = config.get('stream', 'streamurl')
     filepath = config.get('stream', 'filepath')
+    try:
+        compressed = config.getboolean('stream', 'compressed')
+    except ConfigParser.NoOptionError:
+        compressed = True
     logr.info("Collection starting for stream %s"%(streamurl))
     logr.info("Storing data in path %s"%(filepath))
     # Determine processing method
@@ -170,5 +179,5 @@ if __name__ == '__main__':
         sys.exit(-1)
     # ok, do it
     client = GnipStreamClient(streamurl, streamname, username, password, 
-            filepath, rollduration, proc)
+            filepath, rollduration, proc, compressed=compressed)
     client.run()

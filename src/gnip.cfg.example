@@ -10,6 +10,7 @@ logfilepath=../log
 streamurl=https://stream.gnip.com:443/accounts/shendrickson/publishers/twitter/streams/track/pt1.json
 streamname=Powertrack
 filepath=../data
+compressed=True
 
 [proc]
 rollduration=60
