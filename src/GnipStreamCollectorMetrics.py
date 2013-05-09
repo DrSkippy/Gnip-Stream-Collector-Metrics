@@ -57,10 +57,13 @@ class GnipStreamClient(object):
                 delay = delay*DELAY_FACTOR if delay < DELAY_MAX else DELAY_MAX
             except httplib.IncompleteRead, e:
                 logr.error("Streaming chunked-read error (data chunk lost): %s"%e)
-                # no delay increase here, just reconnedt
+                # no delay increase here, just reconnect
             except urllib2.HTTPError, e:
                 logr.error("HTTP error: %s"%e)
-                # no delay increase here, just reconnedt
+                # no delay increase here, just reconnect
+            except urllib2.URLError, e:
+                logr.error("URL error: %s"%e)
+                delay = delay*DELAY_FACTOR if delay < DELAY_MAX else DELAY_MAX
             time.sleep(delay)
 
     def getStream(self):
