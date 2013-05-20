@@ -86,7 +86,10 @@ class GnipStreamClient(object):
             test_roll_size = roll_size + len(self.string_buffer)
             if self.triggerProcess(test_time, test_roll_size):
                 try:
-                    [records, self.string_buffer] = self.string_buffer.rsplit(NEW_LINE,1)
+                    # occasionally new lines are missing
+                    self.string_buffer.replace("}{", "}%s{"%NEW_LINE)
+                    # only splits on new lines
+                    [recs, self.string_buffer] = self.string_buffer.rsplit(NEW_LINE,1)
                     timeSpan = test_time - self.time_roll_start
                     logr.debug("recsize=%d, %s, %s, ts=%d, dur=%d"%
                             (len(records), self.streamName, self.filePath, 
