@@ -89,7 +89,7 @@ class GnipStreamClient(object):
                     # occasionally new lines are missing
                     self.string_buffer.replace("}{", "}%s{"%NEW_LINE)
                     # only splits on new lines
-                    [recs, self.string_buffer] = self.string_buffer.rsplit(NEW_LINE,1)
+                    [records, self.string_buffer] = self.string_buffer.rsplit(NEW_LINE,1)
                     timeSpan = test_time - self.time_roll_start
                     logr.debug("recsize=%d, %s, %s, ts=%d, dur=%d"%
                             (len(records), self.streamName, self.filePath, 
