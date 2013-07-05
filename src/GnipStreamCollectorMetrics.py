@@ -19,12 +19,13 @@ from CountTwitterRules import CountTwitterRules
 from Redis import Redis
 from Latency import Latency
 
-CHUNK_SIZE = 2**16        # decrease for v. low volume streams, > max record size
+CHUNK_SIZE = 2**17        # decrease for v. low volume streams, > max record size
 GNIP_KEEP_ALIVE = 30      # 30 sec gnip timeout
 MAX_BUF_SIZE = 2**22      # bytes records to hold in memory
 MAX_ROLL_SIZE = 2**30     # force time-period to roll forward 
 DELAY_FACTOR = 1.5        # grow by DELAY_FACTOR - 1 % with each failed connection
 DELAY_MAX = 150           # maximum delay in seconds
+DELAY_MIN = 0.1           # minimum delay in seconds
 NEW_LINE = '\r\n'
 
 class GnipStreamClient(object):
@@ -46,15 +47,15 @@ class GnipStreamClient(object):
     
     def run(self):
         self.time_roll_start = time.time()
-        delay = 0.01
+        delay = DELAY_MIN
         while True:
             try:
                 self.getStream()
                 logr.error("Forced disconnect")
-                delay = 0.01
+                delay = DELAY_MIN
             except ssl.SSLError, e:
-                logr.error("Connection failed: %s"%e)
                 delay = delay*DELAY_FACTOR if delay < DELAY_MAX else DELAY_MAX
+                logr.error("Connection failed: %s (delay %2.1f s)"%(e, delay))
             except httplib.IncompleteRead, e:
                 logr.error("Streaming chunked-read error (data chunk lost): %s"%e)
                 # no delay increase here, just reconnect
@@ -62,30 +63,34 @@ class GnipStreamClient(object):
                 logr.error("HTTP error: %s"%e)
                 # no delay increase here, just reconnect
             except urllib2.URLError, e:
-                logr.error("URL error: %s"%e)
                 delay = delay*DELAY_FACTOR if delay < DELAY_MAX else DELAY_MAX
+                logr.error("URL error: %s (delay %2.1f s)"%(e, delay))
             time.sleep(delay)
 
     def getStream(self):
         logr.info("Connecting")
         req = urllib2.Request(self.streamURL, headers=self.headers)
         response = urllib2.urlopen(req, timeout=(1+GNIP_KEEP_ALIVE))
-        decompressor = zlib.decompressobj(16+zlib.MAX_WBITS)
-        self.string_buffer = ''
-        roll_size = 0
-        while True:
-            if self.compressed:
-                chunk = decompressor.decompress(response.read(CHUNK_SIZE))
-            else:
-                chunk = response.read(CHUNK_SIZE)
-            # if chunk is zero length, no longer connected to gnip
-            if chunk == '':
-                return
-            self.string_buffer += chunk
-            test_time = time.time()
-            test_roll_size = roll_size + len(self.string_buffer)
-            if self.triggerProcess(test_time, test_roll_size):
-                try:
+        # sometimes there is a delay closing the connection, can go directly to the socket to control this
+        realsock = response.fp._sock.fp._sock
+        try:
+            decompressor = zlib.decompressobj(16+zlib.MAX_WBITS)
+            self.string_buffer = ''
+            roll_size = 0
+            while True:
+                if self.compressed:
+                    chunk = decompressor.decompress(response.read(CHUNK_SIZE))
+                else:
+                    chunk = response.read(CHUNK_SIZE)
+                # if chunk is zero length, no longer connected to gnip
+                if chunk == '':
+                    return
+                self.string_buffer += chunk
+                test_time = time.time()
+                test_roll_size = roll_size + len(self.string_buffer)
+                if self.triggerProcess(test_time, test_roll_size):
+                    if test_roll_size == 0:
+                        logr.info("No data collected this period (testTime=%s)"%test_time)
                     # occasionally new lines are missing
                     self.string_buffer.replace("}{", "}%s{"%NEW_LINE)
                     # only splits on new lines
@@ -101,8 +106,11 @@ class GnipStreamClient(object):
                         roll_size = 0
                     else:
                         roll_size += len(records)
-                except Exception, e:
-                    raise e
+        except Exception, e:
+            logr.error("Buffer processing error (%s) - restarting connection"%e)
+            realsock.close() 
+            response.close()
+            raise e
 
     def rollForward(self, ttime, tsize):
         # these trigger both processing and roll forward
