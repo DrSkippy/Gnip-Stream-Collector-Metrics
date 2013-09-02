@@ -12,6 +12,7 @@ import ssl
 import base64
 import zlib
 import sys
+import socket
 
 # stream processing strategies
 from SaveThread import SaveThread
@@ -65,6 +66,10 @@ class GnipStreamClient(object):
             except urllib2.URLError, e:
                 delay = delay*DELAY_FACTOR if delay < DELAY_MAX else DELAY_MAX
                 logr.error("URL error: %s (delay %2.1f s)"%(e, delay))
+            except socket.error, e:
+                # Likely reset by peer (why?)
+                delay = delay*DELAY_FACTOR if delay < DELAY_MAX else DELAY_MAX
+                logr.error("Socket error: %s (delay %2.1f s)"%(e, delay))
             time.sleep(delay)
 
     def getStream(self):
