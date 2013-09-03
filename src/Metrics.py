@@ -17,6 +17,12 @@ BUCKET_SIZE = 15
 fmt = "%Y-%m-%dT%H:%M:%S.000Z"
 
 class Metrics(SaveThread):
+    def __init__(self, _buffer, _feedname, _savepath, _rootLogger, _startTs, _spanTs, **kwargs):
+        self.sql_instance = kwargs["sql_instance"]
+        self.sql_user_name = kwargs["sql_user_name"]
+        self.sql_password = kwargs["sql_password"]
+        self.sql_db = kwargs["sql_db"]
+        SaveThread.__init__(self, _buffer, _feedname, _savepath, _rootLogger, _startTs, _spanTs, **kwargs) 
 
     def run(self):
         self.logger.debug("Metrics started")
@@ -51,25 +57,32 @@ class Metrics(SaveThread):
             else:
                 lang = "None"
             data[bucket]["langs"][lang] = 1 + data[bucket]["langs"].get(lang, 0)
-        with write_lock:
+            #
+            verb_list = []
+            lang_list = []
             for t in data:
-                sql = """INSERT INTO table (a, datetime, verb, count) VALUES (%s,%s,%s) 
-                         ON DUPLICATE KEY UPDATE count=count + %s;"""
-                for x in data[t]["verbs"].items():
-                    print x
-                for x in data[t]["langs"].items():
-                    print x
+                verb_count_list =  data[t]["verbs"].items()
+                dates = [ t for i in range(len(verb_count_list))]
+                counts = [ i[1] for i in verb_count_list]
+                verb_list.extend(zip(dates, verb_count_list, counts))
+                #
+                lang_count_list =  data[t]["langs"].items()
+                dates = [ t for i in range(len(lang_count_list))]
+                counts = [ i[1] for i in lang_count_list]
+                verb_list.extend(zip(dates, lang_count_list, counts))
         """
         # connect to the db
         db=MySQLdb.connect(
-                user="shendrickson", 
-                passwd="ss_merploft",
-                host="gnipdatasciencemedium.cq5kbhkpogrx.us-west-1.rds.amazonaws.com",
-                db="twitter_volume"
+                user=self.sql_user_name), 
+                passwd=self.sql_password,
+                host=self.sql_instance,
+                db=self.sql_db
                 )
         try:
             c = db.cursor()
-            c.execute("""LOCK TABLES key_queue WRITE;""")
+            sql = """INSERT INTO table (datetime, verb, count) VALUES (%s,%s,%s) 
+                     ON DUPLICATE KEY UPDATE count=count + %s;"""
+            c.execute(sql, zip(
             db.commit()
         except Exception, e:
             print >>sys.stderr,"A key_queue table lock or locker flag error occured (%s)"%str(e)

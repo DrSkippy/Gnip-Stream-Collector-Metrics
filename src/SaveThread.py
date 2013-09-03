@@ -10,7 +10,7 @@ import os
 write_lock = RLock()
 
 class SaveThread(threading.Thread):
-    def __init__(self, _buffer, _feedname, _savepath, _rootLogger, _startTs, _spanTs):
+    def __init__(self, _buffer, _feedname, _savepath, _rootLogger, _startTs, _spanTs, **kwargs):
         self.logger =  _rootLogger
         self.savepath = _savepath
         self.string_buffer = _buffer

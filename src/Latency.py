@@ -15,7 +15,7 @@ tzOffset = datetime.timedelta(seconds=3600*7)
 tzOffset = datetime.timedelta(seconds=0)
 
 class Latency(threading.Thread):
-    def __init__(self, _buffer, _feedname, _savepath, _rootLogger, _endTs, _spanTs):
+    def __init__(self, _buffer, _feedname, _savepath, _rootLogger, _endTs, _spanTs, **kwargs):
         threading.Thread.__init__(self)
         with wrt_lock:
             self.logger = _rootLogger

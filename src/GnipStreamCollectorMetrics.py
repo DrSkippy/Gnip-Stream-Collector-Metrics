@@ -48,12 +48,12 @@ class GnipStreamClient(object):
             'Authorization' : 'Basic %s'%base64.encodestring(
                 '%s:%s'%(_userName, _password))  }
     
-    def run(self):
+    def run(self, **kwargs):
         self.time_roll_start = time.time()
         delay = DELAY_MIN
         while True:
             try:
-                self.getStream()
+                self.getStream(**kwargs)
                 logr.error("Forced disconnect")
                 delay = DELAY_MIN
             except ssl.SSLError, e:
@@ -74,7 +74,7 @@ class GnipStreamClient(object):
                 logr.error("Socket error: %s (delay %2.1f s)"%(e, delay))
             time.sleep(delay)
 
-    def getStream(self):
+    def getStream(self, **kwargs):
         logr.info("Connecting")
         req = urllib2.Request(self.streamURL, headers=self.headers)
         response = urllib2.urlopen(req, timeout=(1+GNIP_KEEP_ALIVE))
@@ -107,8 +107,13 @@ class GnipStreamClient(object):
                             (len(records), self.streamName, self.filePath, 
                                 test_time, timeSpan))
                     for p in self.procThread:
-                        p(records, self.streamName, self.filePath,
-                            logr, self.time_roll_start, timeSpan).start()
+                        p(records, 
+                          self.streamName, 
+                          self.filePath,
+                          logr, 
+                          self.time_roll_start, 
+                          timeSpan,
+                          **kwargs).start()
                     if self.rollForward(test_time, test_roll_size):
                         self.time_roll_start = test_time
                         roll_size = 0
@@ -177,12 +182,13 @@ if __name__ == '__main__':
     # stream
     streamurl = config.get('stream', 'streamurl')
     filepath = config.get('stream', 'filepath')
-    # set up authentication
+    # set db up authentication (optional)
+    kwargs = {}
     if config.has_section('db'):
-        sql_user_name = config.get('db','sql_user_name')
-        sql_password = config.get('db','sql_password')
-        sql_instance = config.get('db','sql_instance')
-        sql_db = config.get('db','sql_db')
+        kwargs["sql_user_name"] = config.get('db','sql_user_name')
+        kwargs["sql_password"] = config.get('db','sql_password')
+        kwargs["sql_instance"] = config.get('db','sql_instance')
+        kwargs["sql_db"] = config.get('db','sql_db')
     try:
         compressed = config.getboolean('stream', 'compressed')
     except ConfigParser.NoOptionError:
@@ -203,7 +209,7 @@ if __name__ == '__main__':
     elif processtype == "redis":
         proc.append(Redis)
     elif processtype == "fileandmetrics":
-        if sql_db is None:
+        if "sql_db" not in kwargs:
             logr.error("No database configured.")
             sys.exit()
         proc.append(SaveThread)
@@ -212,6 +218,13 @@ if __name__ == '__main__':
         logr.error("No valid processing strategy selected (%s), aborting"%processtype)
         sys.exit(-1)
     # ok, do it
-    client = GnipStreamClient(streamurl, streamname, username, password, 
-            filepath, rollduration, proc, compressed=compressed)
-    client.run()
+    client = GnipStreamClient(streamurl, 
+                              streamname, 
+                              username, 
+                              password, 
+                              filepath, 
+                              rollduration, 
+                              proc, 
+                              compressed=compressed,
+                              )
+    client.run(**kwargs)
