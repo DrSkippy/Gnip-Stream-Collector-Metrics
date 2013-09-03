@@ -28,6 +28,7 @@ MAX_ROLL_SIZE = 2**30     # force time-period to roll forward
 DELAY_FACTOR = 1.5        # grow by DELAY_FACTOR - 1 % with each failed connection
 DELAY_MAX = 150           # maximum delay in seconds
 DELAY_MIN = 0.1           # minimum delay in seconds
+DELAY_RESET = 60*10       # Connected for the long, then reset the delay to min
 NEW_LINE = '\r\n'
 
 class GnipStreamClient(object):
@@ -50,6 +51,7 @@ class GnipStreamClient(object):
     
     def run(self, **kwargs):
         self.time_roll_start = time.time()
+        delay_reset = time.time()
         delay = DELAY_MIN
         while True:
             try:
@@ -72,6 +74,11 @@ class GnipStreamClient(object):
                 # Likely reset by peer (why?)
                 delay = delay*DELAY_FACTOR if delay < DELAY_MAX else DELAY_MAX
                 logr.error("Socket error: %s (delay %2.1f s)"%(e, delay))
+            if time.time() - delay_reset > DELAY_RESET:
+                # if we have been connected for a long time before this error,
+                # then reset the delay
+                delay = DELAY_MIN
+            delay_reset = time.time()
             time.sleep(delay)
 
     def getStream(self, **kwargs):

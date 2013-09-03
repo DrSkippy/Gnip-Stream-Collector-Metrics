@@ -36,3 +36,6 @@ processtype=rules
 
 # store stream contents in redis
 #processtype=redis
+
+# store stream contents in redis
+#processtype=fileandmetrics
