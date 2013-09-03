@@ -3,9 +3,11 @@ __author__ = 'scott hendrickson'
 
 import sys
 import json
-#import MySQLdb
+import MySQLdb
 import datetime
 from threading import RLock
+import operator
+import re
 
 from SaveThread import SaveThread
 
@@ -14,7 +16,11 @@ write_lock = RLock()
 # minutes
 BUCKET_SIZE = 15
 
-fmt = "%Y-%m-%dT%H:%M:%S.000Z"
+fmt = "%Y-%m-%dT%H:%M:%S"
+datetime_re = re.compile("[0-9]{4}-[0-9]{2}-[0-9]{2}.[0-9]{2}:[0-9]{2}:[0-9]{2}")
+
+i0 = operator.itemgetter(0)
+i1 = operator.itemgetter(1)
 
 class Metrics(SaveThread):
     def __init__(self, _buffer, _feedname, _savepath, _rootLogger, _startTs, _spanTs, **kwargs):
@@ -35,10 +41,11 @@ class Metrics(SaveThread):
             except ValueError, e:
                 self.logger.error("Invalid JSON record (%s)"%e)
                 continue
+            posted_time = datetime.datetime.utcnow()
             if "postedTime" in activity:
-                posted_time = datetime.datetime.strptime(activity["postedTime"],fmt)
-            else:
-                posted_time = datetime.datetime.utcnow()
+                short_datetime_re = datetime_re.search(activity["postedTime"])
+                if short_datetime_re:
+                    posted_time = datetime.datetime.strptime(short_datetime_re.group(0).replace(" ","T"),fmt)
             bucket_minute = BUCKET_SIZE * int(posted_time.minute/BUCKET_SIZE) 
             bucket_time = datetime.datetime(posted_time.year, 
                                        posted_time.month, 
@@ -60,33 +67,42 @@ class Metrics(SaveThread):
             #
             verb_list = []
             lang_list = []
+            count_list = []
             for t in data:
+                count_list.append((t, data[t]["count"], data[t]["count"]))
+                #
                 verb_count_list =  data[t]["verbs"].items()
                 dates = [ t for i in range(len(verb_count_list))]
                 counts = [ i[1] for i in verb_count_list]
-                verb_list.extend(zip(dates, verb_count_list, counts))
+                verb_list.extend(zip(dates, map(i0, verb_count_list), map(i1, verb_count_list), counts))
                 #
                 lang_count_list =  data[t]["langs"].items()
                 dates = [ t for i in range(len(lang_count_list))]
                 counts = [ i[1] for i in lang_count_list]
-                verb_list.extend(zip(dates, lang_count_list, counts))
-        """
+                lang_list.extend(zip(dates, map(i0, lang_count_list), map(i1, lang_count_list), counts))
+        self.logger.info("Preparing to insert (counts %d, languages %d, verbs %d) records to db %s."%
+                (len(count_list), len(lang_list), len(verb_list), self.sql_db))
+
         # connect to the db
         db=MySQLdb.connect(
-                user=self.sql_user_name), 
+                user=self.sql_user_name, 
                 passwd=self.sql_password,
                 host=self.sql_instance,
                 db=self.sql_db
                 )
         try:
             c = db.cursor()
-            sql = """INSERT INTO table (datetime, verb, count) VALUES (%s,%s,%s) 
-                     ON DUPLICATE KEY UPDATE count=count + %s;"""
-            c.execute(sql, zip(
+            sql_count = """INSERT INTO counts (datetime, count) VALUES (%s,%s) 
+                           ON DUPLICATE KEY UPDATE count=count + %s;"""
+            c.executemany(sql_count, count_list)
+            sql_verb = """INSERT INTO verb (datetime, verb, count) VALUES (%s,%s,%s)
+                           ON DUPLICATE KEY UPDATE count=count + %s;"""
+            c.executemany(sql_verb, verb_list)
+            sql_lang = """INSERT INTO language (datetime, language, count) VALUES (%s,%s,%s) 
+                           ON DUPLICATE KEY UPDATE count=count + %s;"""
+            c.executemany(sql_lang, lang_list)
             db.commit()
         except Exception, e:
-            print >>sys.stderr,"A key_queue table lock or locker flag error occured (%s)"%str(e)
+            print >>sys.stderr,"A MySQL insert error occured (%s)"%str(e)
             db.rollback()
-        """
-
         sys.exit(0)
