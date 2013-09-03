@@ -15,6 +15,12 @@ compressed=True
 [proc]
 rollduration=60
 
+[db]
+sql_instance=<mysqldb host string"
+sql_user_name=<un>
+sql_password=<pwd>
+sql_db=MetricsDB
+
 #
 # NOTE: tested with only one of these at a time
 #

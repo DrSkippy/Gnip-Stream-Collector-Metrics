@@ -19,6 +19,7 @@ from SaveThread import SaveThread
 from CountTwitterRules import CountTwitterRules
 from Redis import Redis
 from Latency import Latency
+from Metrics import Metrics
 
 CHUNK_SIZE = 2**17        # decrease for v. low volume streams, > max record size
 GNIP_KEEP_ALIVE = 30      # 30 sec gnip timeout
@@ -39,6 +40,7 @@ class GnipStreamClient(object):
         self.streamName = _streamName
         self.streamURL = _streamURL
         self.filePath = _filePath
+        # this is a list
         self.procThread = _procThread
         self.headers = { 'Accept': 'application/json',
             'Connection': 'Keep-Alive',
@@ -104,7 +106,8 @@ class GnipStreamClient(object):
                     logr.debug("recsize=%d, %s, %s, ts=%d, dur=%d"%
                             (len(records), self.streamName, self.filePath, 
                                 test_time, timeSpan))
-                    self.procThread(records, self.streamName, self.filePath,
+                    for p in self.procThread:
+                        p(records, self.streamName, self.filePath,
                             logr, self.time_roll_start, timeSpan).start()
                     if self.rollForward(test_time, test_roll_size):
                         self.time_roll_start = test_time
@@ -174,6 +177,12 @@ if __name__ == '__main__':
     # stream
     streamurl = config.get('stream', 'streamurl')
     filepath = config.get('stream', 'filepath')
+    # set up authentication
+    if config.has_section('db'):
+        sql_user_name = config.get('db','sql_user_name')
+        sql_password = config.get('db','sql_password')
+        sql_instance = config.get('db','sql_instance')
+        sql_db = config.get('db','sql_db')
     try:
         compressed = config.getboolean('stream', 'compressed')
     except ConfigParser.NoOptionError:
@@ -184,16 +193,22 @@ if __name__ == '__main__':
     rollduration = int(config.get('proc', 'rollduration'))
     processtype = config.get('proc', 'processtype')
     logr.info("processing strategy %s"%processtype)
-    proc = None
+    proc = []
     if processtype == "latency":
-        proc = Latency
+        proc.append(Latency)
     elif processtype == "files":
-        proc = SaveThread
+        proc.append(SaveThread)
     elif processtype == "rules":
-        proc = CountTwitterRules
+        proc.append(CountTwitterRules)
     elif processtype == "redis":
-        proc = Redis
-    else:
+        proc.append(Redis)
+    elif processtype == "fileandmetrics":
+        if sql_db is None:
+            logr.error("No database configured.")
+            sys.exit()
+        proc.append(SaveThread)
+        proc.append(Metrics)
+    else: # proc == []:
         logr.error("No valid processing strategy selected (%s), aborting"%processtype)
         sys.exit(-1)
     # ok, do it
