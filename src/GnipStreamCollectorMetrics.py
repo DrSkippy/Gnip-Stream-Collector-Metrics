@@ -16,6 +16,7 @@ import socket
 
 # stream processing strategies
 from SaveThread import SaveThread
+from SaveThreadGnacs import SaveThreadGnacs
 from CountTwitterRules import CountTwitterRules
 from Redis import Redis
 from Latency import Latency
@@ -196,6 +197,9 @@ if __name__ == '__main__':
         kwargs["sql_password"] = config.get('db','sql_password')
         kwargs["sql_instance"] = config.get('db','sql_instance')
         kwargs["sql_db"] = config.get('db','sql_db')
+    if config.has_section('gnacs'):
+        kwargs["options"] = config.get('gnacs','options')
+        kwargs["delim"] = config.get('gnacs','delim')
     try:
         compressed = config.getboolean('stream', 'compressed')
     except ConfigParser.NoOptionError:
@@ -211,6 +215,8 @@ if __name__ == '__main__':
         proc.append(Latency)
     elif processtype == "files":
         proc.append(SaveThread)
+    elif processtype == "files-gnacs":
+        proc.append(SaveThreadGnacs)
     elif processtype == "rules":
         proc.append(CountTwitterRules)
     elif processtype == "redis":
