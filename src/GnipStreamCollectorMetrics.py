@@ -13,6 +13,7 @@ import base64
 import zlib
 import sys
 import socket
+import signal
 
 # stream processing strategies
 from SaveThread import SaveThread
