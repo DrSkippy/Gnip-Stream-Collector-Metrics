@@ -158,11 +158,11 @@ class GnipStreamClient(object):
         return self.rollForward(ttime, tsize)
 
 if __name__ == '__main__':
-    config_file_name = "./gnip.cfg"
-    if not os.path.exists(config_file_name):
-        if 'GNIP_CONFIG_FILE' in os.environ:
-            config_file_name = os.environ['GNIP_CONFIG_FILE']
-        else:
+    if 'GNIP_CONFIG_FILE' in os.environ:
+        config_file_name = os.environ['GNIP_CONFIG_FILE']
+    else:
+        config_file_name = "./gnip.cfg"
+        if not os.path.exists(config_file_name):
             print "No configuration file found."
             sys.exit()
     config = ConfigParser.ConfigParser()
