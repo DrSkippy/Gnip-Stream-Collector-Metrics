@@ -13,9 +13,11 @@ import base64
 import zlib
 import sys
 import socket
+import signal
 
 # stream processing strategies
 from SaveThread import SaveThread
+from SaveThreadGnacs import SaveThreadGnacs
 from CountTwitterRules import CountTwitterRules
 from Redis import Redis
 from Latency import Latency
@@ -156,11 +158,11 @@ class GnipStreamClient(object):
         return self.rollForward(ttime, tsize)
 
 if __name__ == '__main__':
-    config_file_name = "./gnip.cfg"
-    if not os.path.exists(config_file_name):
-        if 'GNIP_CONFIG_FILE' in os.environ:
-            config_file_name = os.environ['GNIP_CONFIG_FILE']
-        else:
+    if 'GNIP_CONFIG_FILE' in os.environ:
+        config_file_name = os.environ['GNIP_CONFIG_FILE']
+    else:
+        config_file_name = "./gnip.cfg"
+        if not os.path.exists(config_file_name):
             print "No configuration file found."
             sys.exit()
     config = ConfigParser.ConfigParser()
@@ -196,6 +198,9 @@ if __name__ == '__main__':
         kwargs["sql_password"] = config.get('db','sql_password')
         kwargs["sql_instance"] = config.get('db','sql_instance')
         kwargs["sql_db"] = config.get('db','sql_db')
+    if config.has_section('gnacs'):
+        kwargs["options"] = config.get('gnacs','options')
+        kwargs["delim"] = config.get('gnacs','delim')
     try:
         compressed = config.getboolean('stream', 'compressed')
     except ConfigParser.NoOptionError:
@@ -211,6 +216,8 @@ if __name__ == '__main__':
         proc.append(Latency)
     elif processtype == "files":
         proc.append(SaveThread)
+    elif processtype == "files-gnacs":
+        proc.append(SaveThreadGnacs)
     elif processtype == "rules":
         proc.append(CountTwitterRules)
     elif processtype == "redis":

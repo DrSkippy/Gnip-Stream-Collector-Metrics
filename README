@@ -242,7 +242,27 @@ Scott-Hendricksons-MacBook-Pro ~/IdeaProjects/RuleProduction/data> tree
 ...
 
 New directories will be created for every hour.  Here the rollduration is set to 
-60s so a new file is created ever minute.
+60s so a new file is created every minute.
+
+
+If your input stream is JSON-formated, you can additionally parse it with Gnacs before writing to disk:
+
+...
+# store stream contents in files by year, month, day, hour, min
+processtype=files-gnacs
+...
+
+Your cfg file must have a [gnacs] block, with a mandatory parameter 'delim' and an optional parameter
+'options', which sets the Gnacs options.
+
+...
+[gnacs]
+options=gulist
+delim=|
+,,,
+
+When using 'files-gnacs', the output directory structure and files names are the same as for 'files'.
+
 
 Enjoy!
 

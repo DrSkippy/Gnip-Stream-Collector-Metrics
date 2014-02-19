@@ -18,6 +18,10 @@ sql_user_name=<un>
 sql_password=<pwd>
 sql_db=MetricsDB
 
+[gnacs]
+options=gulist
+delim=|
+
 [proc]
 rollduration=60
 
@@ -33,6 +37,9 @@ processtype=rules
 
 # store stream contents in files by year, month, day, hour, min
 #processtype=files
+
+# as above, but parse output with Gnacs before writing
+#processtype=files-gnacs
 
 # store stream contents in redis
 #processtype=redis
