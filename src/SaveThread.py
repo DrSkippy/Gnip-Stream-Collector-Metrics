@@ -23,7 +23,7 @@ class SaveThread(threading.Thread):
     def run(self):
         try:
             # store by start date, name by start date
-            self.logger.debug("started")
+            self.logger.debug("SaveThread::run started")
             file_path = "/".join([
                 self.savepath,
                 "%d"%self.timeStart.tm_year,

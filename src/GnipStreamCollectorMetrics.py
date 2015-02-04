@@ -116,6 +116,7 @@ class GnipStreamClient(object):
                             (len(records), self.streamName, self.filePath, 
                                 test_time, timeSpan))
                     for p in self.procThread:
+                        #print(p)
                         p(records, 
                           self.streamName, 
                           self.filePath,
@@ -175,7 +176,8 @@ if __name__ == '__main__':
             filename=logfilepath + "/%s-log"%streamname,
             mode='a', maxBytes=2**24, backupCount=5)
     rotating_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(funcName)s %(message)s"))
-    logr.setLevel(logging.DEBUG)
+    #logr.setLevel(logging.DEBUG)
+    logr.setLevel(logging.INFO) 
     #logr.setLevel(logging.ERROR)
     logr.addHandler(rotating_handler)
     # set up authentication
@@ -207,28 +209,31 @@ if __name__ == '__main__':
         compressed = True
     logr.info("Collection starting for stream %s"%(streamurl))
     logr.info("Storing data in path %s"%(filepath))
+    
     # Determine processing method
     rollduration = int(config.get('proc', 'rollduration'))
-    processtype = config.get('proc', 'processtype')
-    logr.info("processing strategy %s"%processtype)
+    processtypes = config.get('proc', 'processtype').split(",")
+    logr.info("processing strategy/strategies %s"%processtypes)
+    
     proc = []
-    if processtype == "latency":
-        proc.append(Latency)
-    elif processtype == "files":
-        proc.append(SaveThread)
-    elif processtype == "files-gnacs":
-        proc.append(SaveThreadGnacs)
-    elif processtype == "rules":
-        proc.append(CountTwitterRules)
-    elif processtype == "redis":
-        proc.append(Redis)
-    elif processtype == "fileandmetrics":
-        if "sql_db" not in kwargs:
-            logr.error("No database configured.")
-            sys.exit()
-        proc.append(SaveThread)
-        proc.append(Metrics)
-    else: # proc == []:
+    for processtype in processtypes:
+        if processtype == "latency":
+            proc.append(Latency)
+        elif processtype == "files":
+            proc.append(SaveThread)
+        elif processtype == "files-gnacs":
+            proc.append(SaveThreadGnacs)
+        elif processtype == "rules":
+            proc.append(CountTwitterRules)
+        elif processtype == "redis":
+            proc.append(Redis)
+        elif processtype == "fileandmetrics":
+            if "sql_db" not in kwargs:
+                logr.error("No database configured.")
+                sys.exit()
+            proc.append(SaveThread)
+            proc.append(Metrics)
+    if proc == []: 
         logr.error("No valid processing strategy selected (%s), aborting"%processtype)
         sys.exit(-1)
     # ok, do it
