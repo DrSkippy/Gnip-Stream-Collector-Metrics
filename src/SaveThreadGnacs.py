@@ -2,7 +2,7 @@
 __author__ = 'Jeff Kolb'
 
 from SaveThread import SaveThread
-from twacscsv import TwacsCSV
+from acscsv.twitter_acs import TwacsCSV
 import gzip
 import json
 
@@ -21,7 +21,8 @@ class SaveThreadGnacs(SaveThread):
     def write(self, file_name):
         try:
             # set up Gnacs object
-            gnacs = TwacsCSV(self.delim, self.geo, self.user, self.rules, self.urls, self.lang, self.influence, self.struct)
+            ## don't allow keypath specification, for now
+            gnacs = TwacsCSV(self.delim, None, self.geo, self.user, self.rules, self.urls, self.lang, self.influence, self.struct)
             
             # write gnacs-ified output to file
             fp = gzip.open(file_name, "a")
@@ -31,7 +32,8 @@ class SaveThreadGnacs(SaveThread):
                     continue
                 act_json = json.loads(act)
                 try:
-                    act_formated = gnacs.asString(gnacs.procRecordToList(act_json)).encode('utf-8')
+                    act_formated = gnacs.procRecord(act_json).encode('utf-8')
+                    #act_formated = gnacs.asString(gnacs.procRecordToList(act_json)).encode('utf-8')
                 except Exception, e:
                     self.logger.error("gnacs JSON->list->str formatting failed: {0}".format(e))
                     raise e

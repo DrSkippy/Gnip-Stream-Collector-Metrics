@@ -26,8 +26,10 @@ delim=|
 rollduration=60
 
 #
-# NOTE: tested with only one of these at a time
-#
+# NOTE: processtype can be a single value or a comma-separated list of any of the values shown below: 
+# e.g. 
+# processtype=rules,files
+# processtype=files-gnacs
 
 # sample stream for latency measurements
 #processtype=latency
