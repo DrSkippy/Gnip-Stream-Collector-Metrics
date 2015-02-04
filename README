@@ -263,6 +263,41 @@ delim=|
 
 When using 'files-gnacs', the output directory structure and files names are the same as for 'files'.
 
+Example 5: Rules
+-----------------
+
+To store counts of rule matches, edit gnip.cfg to set the appropriate rollduration and set
+the filepath.  Set the processtype to "rules". The output will have the same structure as
+"file" and "file-gnacs".
+
+...
+filepath=/Users/scotthendrickson/IdeaProjects/RuleProduction/data
+...
+
+...
+processtype=rules
+...
+
+Run script.
+
+Scott-Hendricksons-MacBook-Pro ~/IdeaProjects/RuleProduction/src> ./GnipStreamCollectorMetrics.py 
+(no output expected)
+
+When you look in the data path:
+
+Scott-Hendricksons-MacBook-Pro ~/IdeaProjects/RuleProduction/data> tree
+.
+└── 2012
+    └── 01
+        └── 06
+            └── 14
+                ├── Powertrack_201201061448497544.counts
+                ├── Powertrack_201201061448783761.counts
+                └── Powertrack_201201061449705606.counts
+...
+
+New directories will be created for every hour.  Here the rollduration is set to 
+60s so a new file is created every minute.
 
 Enjoy!
 
