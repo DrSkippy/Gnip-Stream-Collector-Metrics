@@ -18,7 +18,7 @@ def make_utc_timestamp(timestamp):
     date_obj = datetime.datetime.strptime(timestamp.split(".")[0], "%Y-%m-%dT%H:%M:%S")
     return str(int((date_obj - datetime.datetime(1970,1,1)).total_seconds()))
 
-class SaveThreadGnacs(SaveThread):
+class SaveCustomLikeCSV(SaveThread):
     def __init__(self, _buffer, _feedname, _savepath, _rootLogger, _startTs, _spanTs, **kwargs):
         SaveThread.__init__(self, _buffer, _feedname, _savepath, _rootLogger, _startTs, _spanTs, **kwargs)
 

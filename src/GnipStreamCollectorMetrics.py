@@ -232,6 +232,10 @@ if __name__ == '__main__':
                 sys.exit()
             proc.append(SaveThread)
             proc.append(Metrics)
+        else:
+            import CustomOutput
+            if processtype in dir(CustomOutput):
+                proc.append(getattr(CustomOutput, processtype))
     if proc == []: 
         logr.error("No valid processing strategy selected (%s), aborting"%processtype)
         sys.exit(-1)
