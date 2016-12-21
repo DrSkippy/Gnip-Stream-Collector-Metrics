@@ -1,19 +1,25 @@
 #!/usr/bin/env python
 __author__ = 'scott hendrickson'
 
-import ConfigParser
 import os
 import time
 import logging
 import logging.handlers
-import urllib2
-import httplib
 import ssl
 import base64
 import zlib
 import sys
 import socket
 import signal
+if sys.version_info.major == 3:
+    import http.client as httplib
+    import configparser as ConfigParser
+    from urllib.request import Request,urlopen
+    from urllib.error import HTTPError,URLError 
+elif sys.version_info.major == 2:
+    import httplib
+    import ConfigParser
+    from urllib2 import HTTPError,URLError,Request,urlopen
 
 CHUNK_SIZE = 2**17        # decrease for v. low volume streams, > max record size
 GNIP_KEEP_ALIVE = 30      # 30 sec gnip timeout
@@ -37,10 +43,16 @@ class GnipStreamClient(object):
         self.filePath = _filePath
         # this is a list
         self.procThread = _procThread
+        if sys.version_info.major == 3:
+            byte_user_and_pwd = ('%s:%s'%(_userName, _password)).encode('utf-8')
+            encoded_u_and_p = base64.encodestring(byte_user_and_pwd).strip()
+            string_auth = 'Basic ' + encoded_u_and_p.decode('utf-8')
+        elif sys.version_info.major == 2:
+            string_auth = 'Basic %s'%base64.encodestring('%s:%s'%(_userName, _password)).strip()
         self.headers = { 'Accept': 'application/json',
             'Connection': 'Keep-Alive',
             'Accept-Encoding' : 'gzip',
-            'Authorization' : 'Basic %s'%base64.encodestring('%s:%s'%(_userName, _password)).strip()  
+            'Authorization' : string_auth
             }
     
     def run(self, **kwargs):
@@ -52,19 +64,19 @@ class GnipStreamClient(object):
                 self.getStream(**kwargs)
                 logr.error("Forced disconnect")
                 delay = DELAY_MIN
-            except ssl.SSLError, e:
+            except ssl.SSLError as e:
                 delay = delay*DELAY_FACTOR if delay < DELAY_MAX else DELAY_MAX
                 logr.error("Connection failed: %s (delay %2.1f s)"%(e, delay))
-            except httplib.IncompleteRead, e:
+            except httplib.IncompleteRead as e:
                 logr.error("Streaming chunked-read error (data chunk lost): %s"%e)
                 # no delay increase here, just reconnect
-            except urllib2.HTTPError, e:
+            except HTTPError as e:
                 logr.error("HTTP error: %s"%e)
                 # no delay increase here, just reconnect
-            except urllib2.URLError, e:
+            except URLError as e:
                 delay = delay*DELAY_FACTOR if delay < DELAY_MAX else DELAY_MAX
                 logr.error("URL error: %s (delay %2.1f s)"%(e, delay))
-            except socket.error, e:
+            except socket.error as e:
                 # Likely reset by peer (why?)
                 delay = delay*DELAY_FACTOR if delay < DELAY_MAX else DELAY_MAX
                 logr.error("Socket error: %s (delay %2.1f s)"%(e, delay))
@@ -77,10 +89,14 @@ class GnipStreamClient(object):
 
     def getStream(self, **kwargs):
         logr.info("Connecting")
-        req = urllib2.Request(self.streamURL, headers=self.headers)
-        response = urllib2.urlopen(req, timeout=(1+GNIP_KEEP_ALIVE))
+        req = Request(self.streamURL, headers=self.headers)
+        response = urlopen(req, timeout=(1+GNIP_KEEP_ALIVE))
         # sometimes there is a delay closing the connection, can go directly to the socket to control this
-        realsock = response.fp._sock.fp._sock
+        # and in python 3 this looks a little different
+        if sys.version_info.major == 3:
+            realsock = response.fp.raw._sock
+        elif sys.version_info.major == 2:
+            realsock = response.fp._sock.fp._sock
         try:
             decompressor = zlib.decompressobj(16+zlib.MAX_WBITS)
             self.string_buffer = ''
@@ -93,7 +109,7 @@ class GnipStreamClient(object):
                 # if chunk is zero length, no longer connected to gnip
                 if chunk == '':
                     return
-                self.string_buffer += chunk
+                self.string_buffer += chunk.decode('utf-8')
                 test_time = time.time()
                 test_roll_size = roll_size + len(self.string_buffer)
                 if self.triggerProcess(test_time, test_roll_size):
@@ -121,7 +137,7 @@ class GnipStreamClient(object):
                         roll_size = 0
                     else:
                         roll_size += len(records)
-        except Exception, e:
+        except Exception as e:
             logr.error("Buffer processing error (%s) - restarting connection"%e)
             realsock.close() 
             response.close()
@@ -156,7 +172,7 @@ if __name__ == '__main__':
     else:
         config_file_name = "./gnip.cfg"
         if not os.path.exists(config_file_name):
-            print "No configuration file found."
+            print("No configuration file found.")
             sys.exit()
     config = ConfigParser.ConfigParser()
     config.read(config_file_name)
@@ -216,8 +232,11 @@ if __name__ == '__main__':
             from SaveThread import SaveThread
             proc.append(SaveThread)
         elif processtype == "files-gnacs":
-            from SaveThreadGnacs import SaveThreadGnacs
-            proc.append(SaveThreadGnacs)
+            if sys.version_info.major == 3:
+                logr.error("The processtype 'files-gnacs' is not availble for python 3") 
+            if sys.version_info.major == 2:
+                from SaveThreadGnacs import SaveThreadGnacs
+                proc.append(SaveThreadGnacs)
         elif processtype == "rules":
             from CountTwitterRules import CountTwitterRules
             proc.append(CountTwitterRules)

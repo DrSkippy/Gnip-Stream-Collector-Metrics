@@ -45,10 +45,10 @@ class SaveCustomLikeCSV(SaveThread):
                     self.logger.error("Custom JSON->list->str formatting failed: {0}".format(e))
                     raise e
                 buffer_formated += str(act_formated) + '\n'
-            fp.write(buffer_formated)
+            fp.write(buffer_formated.encode('utf-8'))
             fp.close()
             self.logger.info("saved file %s"%file_name)
-        except Exception, e:
+        except Exception as e:
             self.logger.error("write failed: %s"%e)
             raise e
 

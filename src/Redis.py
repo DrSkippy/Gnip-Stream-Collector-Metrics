@@ -35,9 +35,9 @@ class Redis(SaveThread):
             if "gnip" in actJson:
                 if "matching_rules" in actJson["gnip"]:
                     for mr in actJson["gnip"]["matching_rules"]:
-                        self.logger.debug("inc rule (%s)"%str(mr["value"]))
+                        self.logger.debug("inc rule (%s)"%str(mr["id"]))
                         # Redis store of rule match counts
-                        key = "["+mr["value"]+"]"
+                        key = "["+mr["id"]+"]"
                         rs.incr(key)
                         rs.incr("TotalRuleMatchCount")
                 else:
