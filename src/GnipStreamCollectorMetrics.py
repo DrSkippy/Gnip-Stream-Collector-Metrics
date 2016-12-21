@@ -15,14 +15,6 @@ import sys
 import socket
 import signal
 
-# stream processing strategies
-from SaveThread import SaveThread
-from SaveThreadGnacs import SaveThreadGnacs
-from CountTwitterRules import CountTwitterRules
-from Redis import Redis
-from Latency import Latency
-from Metrics import Metrics
-
 CHUNK_SIZE = 2**17        # decrease for v. low volume streams, > max record size
 GNIP_KEEP_ALIVE = 30      # 30 sec gnip timeout
 MAX_BUF_SIZE = 2**22      # bytes records to hold in memory
@@ -48,8 +40,8 @@ class GnipStreamClient(object):
         self.headers = { 'Accept': 'application/json',
             'Connection': 'Keep-Alive',
             'Accept-Encoding' : 'gzip',
-            'Authorization' : 'Basic %s'%base64.encodestring(
-                '%s:%s'%(_userName, _password))  }
+            'Authorization' : 'Basic %s'%base64.encodestring('%s:%s'%(_userName, _password)).strip()  
+            }
     
     def run(self, **kwargs):
         self.time_roll_start = time.time()
@@ -218,16 +210,23 @@ if __name__ == '__main__':
     proc = []
     for processtype in processtypes:
         if processtype == "latency":
+            from Latency import Latency
             proc.append(Latency)
         elif processtype == "files":
+            from SaveThread import SaveThread
             proc.append(SaveThread)
         elif processtype == "files-gnacs":
+            from SaveThreadGnacs import SaveThreadGnacs
             proc.append(SaveThreadGnacs)
         elif processtype == "rules":
+            from CountTwitterRules import CountTwitterRules
             proc.append(CountTwitterRules)
         elif processtype == "redis":
+            from Redis import Redis
             proc.append(Redis)
         elif processtype == "fileandmetrics":
+            from SaveThread import SaveThread
+            from Metrics import Metrics
             if "sql_db" not in kwargs:
                 logr.error("No database configured.")
                 sys.exit()
