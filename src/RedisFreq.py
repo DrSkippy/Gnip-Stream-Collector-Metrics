@@ -23,7 +23,7 @@ class RedisFreq(object):
                     self.ruleMap[key] = int(rs.get(key))
             except ValueError:
                 sys.stderr.write("valMap or ruleMap Key value error\n") 
-            except redis.exceptions.ResponseError, e:
+            except redis.exceptions.ResponseError as e:
                 sys.stderr.write("Redis response errer (%s)\n"%e)
             except IndexError:
                 sys.stderr.write("List index error (%s)\n"%key)

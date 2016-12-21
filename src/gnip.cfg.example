@@ -6,19 +6,21 @@ password=<pwd>
 logfilepath=../log
 
 [stream]
-# Twitter Powertrack stream (Gnip 2.5)
-streamurl=https://stream.gnip.com:443/accounts/shendrickson/publishers/twitter/streams/track/pt1.json
-streamname=Powertrack
-filepath=../data
+# stream
+streamurl=https://gnip-stream.twitter.com/stream/powertrack/accounts/<account name>/publishers/twitter/<stream>.json
+streamname=<name the stream, this shows up in filenames later>
+filepath=../<where your data should go>
 compressed=True
 
 [db]
-sql_instance=<mysqldb host string"
+# note: the SQL interface library being used here does not support Python3, fix outstanding
+sql_instance=<mysqldb host string>
 sql_user_name=<un>
 sql_password=<pwd>
 sql_db=MetricsDB
 
 [gnacs]
+# note: as of right now, GNACS will not be upgraded to support python 3
 options=gulist
 delim=|
 
@@ -28,23 +30,33 @@ rollduration=60
 #
 # NOTE: processtype can be a single value or a comma-separated list of any of the values shown below: 
 # e.g. 
-# processtype=rules,files
+processtype=files,rules
 # processtype=files-gnacs
 
 # sample stream for latency measurements
+# this processtype is python 2&3 compatible
 #processtype=latency
 
 # print out rule production rates
-processtype=rules
+# this processtype is python 2&3 compatible
+#processtype=rules
 
 # store stream contents in files by year, month, day, hour, min
+# this processtype is python 2&3 compatible
 #processtype=files
 
 # as above, but parse output with Gnacs before writing
+# no plans to upgrade GNACS to python 3, this processtype is not python 3 compatible
 #processtype=files-gnacs
 
+# example of a custom processing class
+# this processtype is python 2&3 compatible
+#processtype=SaveCustomLikeCSV
+
 # store stream contents in redis
+# redis not fully tested for python 3
 #processtype=redis
 
 # store stream contents in redis
+# redis is not fully tested for python 3
 #processtype=fileandmetrics

@@ -14,6 +14,7 @@ class CountTwitterRules(SaveThread):
     def write(self, file_name):
         self.logger.debug("CountTwitterRules is writing.")
         count_map = {}
+        rule_tags = {}
         count = 0
         for act in self.string_buffer.split("\n"):
             #self.logger.debug(str(act))
@@ -24,7 +25,8 @@ class CountTwitterRules(SaveThread):
             if "gnip" in act_json:
                 if "matching_rules" in act_json["gnip"]:
                     for mr in act_json["gnip"]["matching_rules"]:
-                        rule = mr["value"]
+                        rule = mr["id"]
+                        rule_tags[mr["id"]] = mr["tag"]
                         #self.logger.debug(str(rule))
                         if rule in count_map:
                             count_map[rule] += 1
@@ -41,20 +43,19 @@ class CountTwitterRules(SaveThread):
             fp = open(file_name, "a")
             #sys.stdout.write("(%s) sample %d tweets (%d seconds)\n"%
             #        (datetime.datetime.now(), count, self.timeSpan))
-            first_col = max([len(x) for x in count_map.keys()]) + 3
+            #first_col = max([len(str(x)) for x in count_map.keys()]) + 3
             count_mapKeys = sorted(count_map.keys(), key=count_map.__getitem__)
             count_mapKeys.reverse()
             for r in count_mapKeys:
                 # for dump to file
-                r_no_comma = r.replace(",","COMMA")
-                write_str = "{}, {}, {}, {}, {}\n".format(now, r_no_comma, count_map[r], count, self.timeSpan)
+                write_str = "{}, {}, {}, {}, {}\n".format(now, r, rule_tags[r], count_map[r], count, self.timeSpan)
                 fp.write(write_str)
                 # for dump to stdout
                 #sys.stdout.write("%s: %s (%4d tweets matched)   %3.4f tweets/second\n"%
                 #(r, '.'*(first_col-len(r)), count_map[r], float(count_map[r])/self.timeSpan)) 
             fp.close()
             self.logger.info("saved file %s"%file_name)
-        except Exception, e:
+        except Exception as e:
             self.logger.error("write failed: %s"%e)
             raise e
 

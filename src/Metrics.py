@@ -38,7 +38,7 @@ class Metrics(SaveThread):
                 continue
             try:
                 activity = json.loads(act)
-            except ValueError, e:
+            except ValueError as e:
                 self.logger.error("Invalid JSON record (%s)"%e)
                 continue
             posted_time = datetime.datetime.utcnow()
@@ -102,7 +102,7 @@ class Metrics(SaveThread):
                            ON DUPLICATE KEY UPDATE count=count + %s;"""
             c.executemany(sql_lang, lang_list)
             db.commit()
-        except Exception, e:
-            print >>sys.stderr,"A MySQL insert error occured (%s)"%str(e)
+        except Exception as e:
+            sys.stderr.write("A MySQL insert error occured (%s)"%str(e))
             db.rollback()
         sys.exit(0)

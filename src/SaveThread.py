@@ -33,7 +33,7 @@ class SaveThread(threading.Thread):
             try:
                 os.makedirs(file_path)
                 self.logger.info("directory created (%s)"%file_path)
-            except OSError, e:
+            except OSError as e:
                 self.logger.info("directory exists (%s)"%file_path)
             name = self.feedName + "_"
             name += "-".join([
@@ -45,7 +45,7 @@ class SaveThread(threading.Thread):
             file_name = file_path + "/" + name
             with write_lock:
                 self.write(file_name)
-        except Exception, e:
+        except Exception as e:
             self.logger.error("saveAs failed, exiting thread (%s). Exiting."%e)
             raise e
     
@@ -53,10 +53,10 @@ class SaveThread(threading.Thread):
         try:
             # simply write to file
             fp = gzip.open(file_name, "a")
-            fp.write(self.string_buffer)
+            fp.write(self.string_buffer.encode('utf-8'))
             fp.close()
             self.logger.info("saved file %s"%file_name)
-        except Exception, e:
+        except Exception as e:
             self.logger.error("write failed: %s"%e)
             raise e
 
