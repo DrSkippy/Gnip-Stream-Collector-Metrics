@@ -167,13 +167,19 @@ class GnipStreamClient(object):
         return self.rollForward(ttime, tsize)
 
 if __name__ == '__main__':
-    if 'GNIP_CONFIG_FILE' in os.environ:
-        config_file_name = os.environ['GNIP_CONFIG_FILE']
-    else:
-        config_file_name = "./gnip.cfg"
-        if not os.path.exists(config_file_name):
-            print("No configuration file found.")
-            sys.exit()
+    # try grabbing the config file from sys.argv first
+    # this makes it easier to launch multiple processes to get multiple streams 
+    # (like FH partitions)
+    try: 
+        config_file_name = sys.argv[1] 
+    except IndexError:
+        if 'GNIP_CONFIG_FILE' in os.environ:
+            config_file_name = os.environ['GNIP_CONFIG_FILE']
+        else:
+            config_file_name = "./gnip.cfg"
+            if not os.path.exists(config_file_name):
+                print("No configuration file found.")
+                sys.exit()
     config = ConfigParser.ConfigParser()
     config.read(config_file_name)
     streamname = config.get('stream', 'streamname')
