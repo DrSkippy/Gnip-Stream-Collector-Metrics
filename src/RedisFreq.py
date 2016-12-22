@@ -88,5 +88,5 @@ class RedisFreq(object):
         return res
 
 if __name__ == '__main__':
-    print RedisFreq()
+    print(RedisFreq())
 

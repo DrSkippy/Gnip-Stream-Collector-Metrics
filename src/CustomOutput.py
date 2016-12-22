@@ -3,9 +3,11 @@ __author__ = 'Fiona Pigott'
 
 from SaveThread import SaveThread
 import gzip
-import json
 import datetime 
-
+try:
+    import ujson as json
+except ImportError:
+    import json
 
 # Twitter Snowflake ID to timestamp (and back)
 # https://github.com/client9/snowflake2time/

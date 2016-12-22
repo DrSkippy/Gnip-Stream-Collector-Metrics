@@ -4,7 +4,10 @@ __author__ = 'Jeff Kolb'
 from SaveThread import SaveThread
 from acscsv.twitter_acs import TwacsCSV
 import gzip
-import json
+try:
+    import ujson as json
+except ImportError:
+    import json
 
 class SaveThreadGnacs(SaveThread):
     def __init__(self, _buffer, _feedname, _savepath, _rootLogger, _startTs, _spanTs, **kwargs):
@@ -22,7 +25,15 @@ class SaveThreadGnacs(SaveThread):
         try:
             # set up Gnacs object
             ## don't allow keypath specification, for now
-            gnacs = TwacsCSV(self.delim, None, self.geo, self.user, self.rules, self.urls, self.lang, self.influence, self.struct)
+            gnacs = TwacsCSV(self.delim
+                    , None
+                    , self.geo
+                    , self.user
+                    , self.rules
+                    , self.urls
+                    , self.lang
+                    , self.influence
+                    , self.struct)
             
             # write gnacs-ified output to file
             fp = gzip.open(file_name, "a")
