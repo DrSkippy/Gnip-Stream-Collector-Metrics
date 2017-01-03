@@ -2,12 +2,15 @@
 __author__ = 'scott hendrickson'
 
 import sys
-import json
 import MySQLdb
 import datetime
 from threading import RLock
 import operator
 import re
+try:
+    import ujson as json
+except ImportError:
+    import json
 
 from SaveThread import SaveThread
 

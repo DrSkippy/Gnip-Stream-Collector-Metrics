@@ -4,9 +4,12 @@ __author__ = 'scott hendrickson'
 from threading import RLock
 import threading
 import sys
-import json
 import time
 import datetime
+try:
+    import ujson as json
+except:
+    import json
 
 wrt_lock = RLock()
 
