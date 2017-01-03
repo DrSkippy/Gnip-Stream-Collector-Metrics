@@ -58,7 +58,7 @@ TIME_TO_LIVE = 90
 
 class Redis(SaveThread):
     def run(self):
-        self.logger.debug("CountRules started")
+        self.logger.info("CountRules started")
         rs = redis.Redis("localhost")
         for act in self.string_buffer.split("\n"):
             self.logger.debug(str(act))
@@ -70,9 +70,9 @@ class Redis(SaveThread):
                     for mr in actJson["gnip"]["matching_rules"]:
                         self.logger.debug("inc rule (%s)"%str(mr["id"]))
                         # Redis store of rule match counts
-                        key = "["+str(mr["id"])+"]"
+                        key = ("[rule_id:"+str(mr["id"])+"]").encode("utf-8")
                         rs.incr(key)
-                        rs.incr("TotalRuleMatchCount")
+                        rs.incr("TotalRuleMatchCount".encode("utf-8"))
                 else:
                     self.logger.debug("matching_rules missing")
             else:
@@ -80,13 +80,14 @@ class Redis(SaveThread):
             try:
             #if "body" in actJson:
                 for t in re.split("\W+", actJson["object"]["body"]):
+                    self.logger.debug(actJson["object"]["body"])
                     tok = t.lower()
                     if tok not in stoplist and len(tok) > 2:
                         self.logger.debug("inc (%s)"%tok)
                         # Redis store of token counts
                         rs.incr(tok)
                         rs.expire(tok, TIME_TO_LIVE)
-                        rs.incr("TotalTokensCount")
+                        rs.incr("TotalTokensCount".encode("utf-8"))
             except KeyError:
                 pass
         sys.exit(0)
