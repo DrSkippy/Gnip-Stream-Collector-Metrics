@@ -54,9 +54,9 @@ processtype=files,rules
 #processtype=SaveCustomLikeCSV
 
 # store stream contents in redis
-# redis not fully tested for python 3
+# this processtype is python 2&3 compatible
 #processtype=redis
 
 # store stream contents in redis
-# redis is not fully tested for python 3
+# this processtype is python 2&3 compatible
 #processtype=fileandmetrics

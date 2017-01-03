@@ -64,8 +64,8 @@ class RedisFreq(object):
         rs.set("TotalTokensCountTmp".encode("utf-8"), c1)
         #
         try:
-            self.lasttime = datetime.datetime.strptime(
-                    rs.get("LastDate".encode("utf-8")).split(".")[0],"%Y-%m-%d %H:%M:%S") #.encode("utf-8")
+            lastdate_key = rs.get("LastDate".encode("utf-8")).decode("utf-8").split(".")[0]
+            self.lasttime = datetime.datetime.strptime(lastdate_key,"%Y-%m-%d %H:%M:%S")
         except TypeError as te:
             self.lasttime = ""
             sys.stderr.write("TypeError was raised: {} \n--Is the key 'LastDate' not present?\n".format(te))
